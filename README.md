@@ -20,9 +20,37 @@ pip install -r requirements.txt
 ```
 
 # Instalação
+
+É necessário criar um arquivo .env antes de rodar qualquer comando
+Ex: env/local.env
+
 1. PostgreSQL 10.x
+```
+./contrig/update.sh
+./contrig/postgresql.sh
+```
 2. PgBouncer 1.8.x
+```
+./contrig/update.sh
+./contrig/pgbouncer.sh
+```
 3. Firewalld 0.4.4
+```
+./contrig/update.sh
+./contrig/firewalld.sh
+```
 4. Nginx 1.12.2
+```
+./contrig/update.sh
+./contrig/nginx.sh
+```
 5. Redis
+```
+./contrig/update.sh
+./contrig/redis.sh
+```
 6. Miniconda
+```
+./contrig/update.sh
+./contrig/miniconda.sh
+```

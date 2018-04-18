@@ -18,42 +18,52 @@ class InstallPostgreSQL(BasicTask):
     def __init__(self):
         super(InstallPostgreSQL, self).__init__()
 
-    def add_repositories(self):
-        run('yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/\
-pgdg-centos10-10-2.noarch.rpm', quiet=True)
-        self.update_os()
+        link = self.__link_repositories()
+        run(f'yum install -y {link}', warn_only=True)
 
     def install(self):
-        self.add_repositories()
-
         if not files.exists(pg_bin):
-            run('yum install -y postgresql10 postgresql10-server postgresql10-contrib postgresql10-devel', quiet=True)
-            run(f'echo -e "{pg_password}\n{pg_password}" | passwd postgres', quiet=True)
+            packages = ' '.join(self.__list_packages())
+            run(f'yum install -y {packages}')
+            run(f'echo -e "{pg_password}\n{pg_password}" | passwd postgres',
+                quiet=True)
             run('systemctl enable postgresql-10')
 
     def configure(self):
         if not files.exists(f'{pg_data}/base'):
             with settings(user='postgres', password=pg_password):
                 run(f'mkdir -p {pg_data}/../wals')
-                run(f'PATH=$PATH:{pg_bin} initdb -D {pg_data} -U postgres -E {pg_encoding} --locale={pg_locale}')
+                run(f'PATH=$PATH:{pg_bin} initdb -D {pg_data} -U postgres \
+-E {pg_encoding} --locale={pg_locale}')
 
-            put(self.__get_pg_hba('trust'), f'{pg_data}/pg_hba.conf')
+            put(self.__config_pg_hba('trust'), f'{pg_data}/pg_hba.conf')
             run('systemctl restart postgresql-10')
 
             with settings(user='postgres', password=pg_password):
                 run(f'PATH=$PATH:{pg_bin} psql -U postgres -c "ALTER USER postgres \
-        WITH ENCRYPTED PASSWORD \'{pg_password}\';"', quiet=True)
+WITH ENCRYPTED PASSWORD \'{pg_password}\';"',
+                    quiet=True)
 
-            put(self.__get_pg_hba('md5'), f'{pg_data}/pg_hba.conf')
-            put(self.__get_postgresql(), f'{pg_data}/postgresql.conf')
+            put(self.__config_pg_hba('md5'), f'{pg_data}/pg_hba.conf')
+            put(self.__config_postgresql(), f'{pg_data}/postgresql.conf')
             run('systemctl restart postgresql-10')
 
-    def __get_pg_hba(self, method):
+    def __link_repositories(self):
+        return 'https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/\
+pgdg-centos10-10-2.noarch.rpm'
+
+    def __list_packages(self):
+        return [
+            'postgresql10', 'postgresql10-server', 'postgresql10-contrib',
+            'postgresql10-devel'
+        ]
+
+    def __config_pg_hba(self, method):
         content = content_file('./config/postgresql/pg_hba.conf')
         content = content.replace('@@METHOD@@', method)
         return create_tempfile(content)
 
-    def __get_postgresql(self):
+    def __config_postgresql(self):
         costom_config = f"""listen_addresses = '127.0.0.1'
 port = 5432
 max_connections = 200

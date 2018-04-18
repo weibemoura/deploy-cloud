@@ -57,3 +57,12 @@ def miniconda():
     task.install()
     task.configure()
 
+
+def setup_complete():
+    update_os()
+    postgresql()
+    pgbouncer()
+    firewalld()
+    nginx()
+    redis()
+    miniconda()

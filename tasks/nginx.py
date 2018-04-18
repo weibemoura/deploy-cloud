@@ -11,7 +11,7 @@ class InstallNginx(BasicTask):
 
     def install(self):
         if not files.exists('/etc/nginx'):
-            run('yum install -y nginx', quiet=True)
+            run('yum install -y nginx')
             run('systemctl enable nginx')
 
         run('systemctl restart nginx')

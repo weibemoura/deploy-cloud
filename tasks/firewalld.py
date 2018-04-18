@@ -9,7 +9,7 @@ class InstallFirewalld(BasicTask):
         super(InstallFirewalld, self).__init__()
 
     def install(self):
-        run('yum install -y firewalld', quiet=True)
+        run('yum install -y firewalld')
         run('systemctl enable firewalld')
         run('systemctl restart firewalld')
 
