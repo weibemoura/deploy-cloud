@@ -8,6 +8,7 @@ from core.base import BasicTask
 
 pg_bin = config('PG_BIN')
 pg_data = config('PG_DATA')
+pg_user = config('PG_USER')
 pg_password = config('PG_PASSWORD')
 pg_encoding = config('PG_ENCODING')
 pg_locale = config('PG_LOCALE')
@@ -25,7 +26,7 @@ class InstallPostgreSQL(BasicTask):
         if not files.exists(pg_bin):
             packages = ' '.join(self.__list_packages())
             run(f'yum install -y {packages}')
-            run(f'echo -e "{pg_password}\n{pg_password}" | passwd postgres',
+            run(f'echo -e "{pg_password}\n{pg_password}" | passwd {pg_user}',
                 quiet=True)
             run('systemctl enable postgresql-10')
 
@@ -33,14 +34,14 @@ class InstallPostgreSQL(BasicTask):
         if not files.exists(f'{pg_data}/base'):
             with settings(user='postgres', password=pg_password):
                 run(f'mkdir -p {pg_data}/../wals')
-                run(f'PATH=$PATH:{pg_bin} initdb -D {pg_data} -U postgres \
+                run(f'PATH=$PATH:{pg_bin} initdb -D {pg_data} -U {pg_user} \
 -E {pg_encoding} --locale={pg_locale}')
 
             put(self.__config_pg_hba('trust'), f'{pg_data}/pg_hba.conf')
             run('systemctl restart postgresql-10')
 
             with settings(user='postgres', password=pg_password):
-                run(f'PATH=$PATH:{pg_bin} psql -U postgres -c "ALTER USER postgres \
+                run(f'PATH=$PATH:{pg_bin} psql -U {pg_user} -c "ALTER USER {pg_user} \
 WITH ENCRYPTED PASSWORD \'{pg_password}\';"',
                     quiet=True)
 
@@ -80,7 +81,8 @@ work_mem = 12MB
 maintenance_work_mem = 512MB
 min_wal_size = 80MB
 max_wal_size = 1GB
-checkpoint_completion_target = 0.7 # (checkpoint_timeout - 2min) / checkpoint_timeout
+# (checkpoint_timeout - 2min) / checkpoint_timeout
+checkpoint_completion_target = 0.7
 checkpoint_timeout = 7min
 wal_buffers = 16MB
 default_statistics_target = 100

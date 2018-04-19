@@ -10,6 +10,7 @@ from core.base import BasicTask
 
 pg_bin = config('PG_BIN')
 pg_data = config('PG_DATA')
+pg_user = config('PG_USER')
 pg_password = config('PG_PASSWORD')
 
 
@@ -28,11 +29,11 @@ class InstallPgBouncer(BasicTask):
 
     def configure(self):
         if files.exists(f'{pg_data}/base'):
-            run(f'PATH=$PATH:{pg_bin} PGPASSWORD={pg_password} psql -U postgres \
+            run(f'PATH=$PATH:{pg_bin} PGPASSWORD={pg_password} psql -U {pg_user} \
 -c \"CREATE ROLE pgbouncer WITH LOGIN ENCRYPTED PASSWORD \'pgbouncer\';"',
                 quiet=True)
             run(f'PATH=$PATH:{pg_bin} PGPASSWORD={pg_password} createdb -U \
-postgres pgbench',
+{pg_user} pgbench',
                 quiet=True)
 
         put(self.__get_users(), '/etc/pgbouncer/userlist.txt')
